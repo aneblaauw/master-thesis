@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import os
 import constants
-
+import utils
 
 def create_subsets(df, subset_intervals, folder_name):
     print('creating subsets...')
@@ -17,7 +17,7 @@ def create_subsets(df, subset_intervals, folder_name):
 
         if input('ok? ') == 'y':
             filenames = []
-            for subset in subsets: filenames.append(create_file_name(subset.iloc[0].label))
+            for subset in subsets: filenames.append(utils.create_file_name(subset.iloc[0].label))
             print(filenames)
 
             if input('ok? ') == 'y':
@@ -39,29 +39,33 @@ def create_units_and_sampling_df():
     sensor_list['label'] = sensor_list['label'].str[:-22] # remove the " average sampling time"
     sensor_list['sampling time'] = sensor_list['sampling time'].str[:-8].astype('float64')
 
-    sensor_list['category'] = sensor_list.apply(lambda row : category(row), axis=1)
-    sensor_list['label'] = sensor_list.apply(lambda row : re_label(row), axis=1)
+    sensor_list['category'] = sensor_list.apply(lambda row : utils.category(row), axis=1)
+    sensor_list['label'] = sensor_list.apply(lambda row : utils.re_label(row), axis=1)
     sensor_list.loc[sensor_list['label'] == "RPM", "label"] = 'Motor RPM'
 
     return sensor_list
 
-# utils
-def create_file_name(name):
-    res = '_'.join([idx for idx in name.split() if idx not in constants.WORD_LIST]).lower()
-    for char in constants.CHAR_LIST:
-        res = res.replace(char, '')
+
+
+def create_notifications_df(filename = "IAA_29PA0002_and_children_notifications_m2.xlsx"):
+    df = pd.read_excel("data/"+filename)
     
-    return res
+    new_columns = df.columns[0].split(',')[1:]# first will be index
+    new_columns.remove('metadata')
+    notifications_df = pd.DataFrame(columns=new_columns)
 
-def category(row):
-    for cat in constants.CATEGORIES: 
-        if cat in row['label']:
-            return cat
+    # iterate through 
+    for i in range(len(df)):
+        string = df.iloc[i][0]
+        row = utils.split_string(string)
+        notifications_df.loc[len(notifications_df)] = row
 
-def re_label(row):
-    for category in constants.CATEGORIES:
-        if category in row['label']:
-            return row['label'].replace(category+' ','')
+    
+    # translating timestamps to datetime
+    time_columns = [column for column in notifications_df.columns if 'Time' in column ]
+    for column in time_columns:
+        notifications_df[column] = notifications_df[column].apply(lambda timestamp: utils.translate_timestamp_to_datetime(timestamp))
+    return notifications_df
 
 
 def run(mode = constants.MOTOR):
@@ -83,4 +87,4 @@ def run(mode = constants.MOTOR):
     create_subsets(df, subset_intervals, mode)
 
 #run(MOTOR)
-run(constants.PUMP_PROCESS)
+#run(constants.PUMP_PROCESS)
