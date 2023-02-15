@@ -130,3 +130,6 @@ dmypy.json
 
 # added folders
 /data
+
+# DS STore
+.DS_Store

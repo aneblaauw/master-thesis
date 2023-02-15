@@ -31,8 +31,19 @@ def create_subsets(df, subset_intervals, folder_name):
                     print('cannot save files since they already exists')
 
 
+def create_units_and_sampling_df():
+    sensor_list = pd.read_csv('data/sensor_list_v2.txt', sep=':', header=None, names=['label', 'sampling time'])
+    sensor_units = pd.read_csv('data/sensor_units.txt', sep='delimiter', header=None, names=['unit'])
+    sensor_list['unit'] = sensor_units['unit'].str.split().str[-1]
 
+    sensor_list['label'] = sensor_list['label'].str[:-22] # remove the " average sampling time"
+    sensor_list['sampling time'] = sensor_list['sampling time'].str[:-8].astype('float64')
 
+    sensor_list['category'] = sensor_list.apply(lambda row : category(row), axis=1)
+    sensor_list['label'] = sensor_list.apply(lambda row : re_label(row), axis=1)
+    sensor_list.loc[sensor_list['label'] == "RPM", "label"] = 'Motor RPM'
+
+    return sensor_list
 
 # utils
 def create_file_name(name):
@@ -41,6 +52,16 @@ def create_file_name(name):
         res = res.replace(char, '')
     
     return res
+
+def category(row):
+    for cat in constants.CATEGORIES: 
+        if cat in row['label']:
+            return cat
+
+def re_label(row):
+    for category in constants.CATEGORIES:
+        if category in row['label']:
+            return row['label'].replace(category+' ','')
 
 
 def run(mode = constants.MOTOR):
