@@ -2,6 +2,7 @@
 import pandas as pd
 import plotly.express as px
 import os
+import constants
 
 
 def create_subsets(df, subset_intervals, folder_name):
@@ -35,38 +36,30 @@ def create_subsets(df, subset_intervals, folder_name):
 
 # utils
 def create_file_name(name):
-    word_list = ['A', 'X', 'plane', '"U"', '"V"', '"W"', "Motor", '(PST)']
-    char_list = ['?']
-    res = '_'.join([idx for idx in name.split() if idx not in word_list]).lower()
-    for char in char_list:
+    res = '_'.join([idx for idx in name.split() if idx not in constants.WORD_LIST]).lower()
+    for char in constants.CHAR_LIST:
         res = res.replace(char, '')
     
     return res
 
 
-
-
-MOTOR = 'motor'
-PUMP_PROCESS = 'pump_process'
-PUMP_MONITORING = 'pump_monitoring'
-
-def run(mode = MOTOR):
-    if mode == MOTOR:
+def run(mode = constants.MOTOR):
+    if mode == constants.MOTOR:
         filename = "Motor.parquet"
         subset_intervals = [[0,1], [1,3], [3,5], [5,8], [8,10]]
-    elif mode == PUMP_PROCESS:
+    elif mode == constants.PUMP_PROCESS:
         filename = "Pump Process.parquet"
         subset_intervals = [[0,2], [2,3], [3,4], [4,6], [6,7]]
-    elif mode == PUMP_MONITORING:
+    elif mode == constants.PUMP_MONITORING:
         filename = "Pump Monitoring (BN).parquet"
         subset_intervals = [[0,2], [2,4], [4,6], [6,8], [8,12], [12,14]]
 
     print('fetching data...')
     df = pd.read_parquet("data/"+filename)
-    if mode == MOTOR:
+    if mode == constants.MOTOR:
         df[df.label == 'NDE Vibration X plane ']
         df[df.label == 'NDE Vibration X plane']
     create_subsets(df, subset_intervals, mode)
 
 #run(MOTOR)
-run(PUMP_PROCESS)
+run(constants.PUMP_PROCESS)
