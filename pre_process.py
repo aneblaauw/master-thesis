@@ -5,6 +5,9 @@ import os
 import constants
 import utils
 
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import when
+
 def create_subsets(df, subset_intervals, folder_name):
     print('creating subsets...')
     labels = df.label.unique()
@@ -29,6 +32,27 @@ def create_subsets(df, subset_intervals, folder_name):
                     for filename in filenames: subset.to_parquet(f'{folder_path}/{filename}.parquet')
                 else:
                     print('cannot save files since they already exists')
+
+def create_subsets_pyspark(df, subset_intervals, folder_name, save = False):
+    print('creating subsets...')
+    labels = [row['label'] for row in  sorted(df.select('label').distinct().collect())]
+    subsets = []
+    filenames = []
+    for interval in subset_intervals: 
+        subsets.append(df.filter(df.label.isin(labels[interval[0]:interval[1]])))
+        filenames.append(utils.create_file_name(labels[interval[0]]))
+
+    if save:
+        folder_path = f'data/{folder_name}/'
+        #Assuming the folder does not exists, and therefore no files with the same names
+        if not os.path.exists(folder_path):
+            os.mkdir(folder_path)
+            print(f'saving subsets in folder {folder_path}')
+            for i in range(len(subsets)):
+                subsets[i].write.parquet(f'{folder_path}/{filenames[i]}.parquet')
+        else:
+            print('cannot save files since they already exists')
+    return subsets
 
 
 def create_units_and_sampling_df():
@@ -68,23 +92,45 @@ def create_notifications_df(filename = "IAA_29PA0002_and_children_notifications_
     return notifications_df
 
 
-def run(mode = constants.MOTOR):
-    if mode == constants.MOTOR:
-        filename = "Motor.parquet"
-        subset_intervals = [[0,1], [1,3], [3,5], [5,8], [8,10]]
-    elif mode == constants.PUMP_PROCESS:
-        filename = "Pump Process.parquet"
-        subset_intervals = [[0,2], [2,3], [3,4], [4,6], [6,7]]
-    elif mode == constants.PUMP_MONITORING:
-        filename = "Pump Monitoring (BN).parquet"
-        subset_intervals = [[0,2], [2,4], [4,6], [6,8], [8,12], [12,14]]
+def run(mode = constants.MOTOR, engine = 'SPARK', save = False ):
+    if engine == 'PANDAS':
+        if mode == constants.MOTOR:
+            filename = "Motor.parquet"
+            subset_intervals = [[0,1], [1,3], [3,5], [5,8], [8,10]]
+        elif mode == constants.PUMP_PROCESS:
+            filename = "Pump Process.parquet"
+            subset_intervals = [[0,2], [2,3], [3,4], [4,6], [6,7]]
+        elif mode == constants.PUMP_MONITORING:
+            filename = "Pump Monitoring (BN).parquet"
+            subset_intervals = [[0,2], [2,4], [4,6], [6,8], [8,12], [12,14]]
 
-    print('fetching data...')
-    df = pd.read_parquet("data/"+filename)
-    if mode == constants.MOTOR:
-        df[df.label == 'NDE Vibration X plane ']
-        df[df.label == 'NDE Vibration X plane']
-    create_subsets(df, subset_intervals, mode)
+        print('fetching data...')
+        df = pd.read_parquet("data/"+filename)
+        if mode == constants.MOTOR:
+            df[df.label == 'NDE Vibration X plane ']
+            df[df.label == 'NDE Vibration X plane']
+        create_subsets(df, subset_intervals, mode)
+    if engine == 'SPARK':
+        spark = SparkSession.builder \
+                            .config("spark.executor.memory", "70g") \
+                            .config("spark.driver.memory", "50g") \
+                            .config("spark.memory.offHeap.enabled",True) \
+                            .config("spark.memory.offHeap.size","16g") \
+                            .appName('Master-thesis') \
+                            .getOrCreate()
 
-#run(MOTOR)
+        if mode == constants.MOTOR:
+            filename = "Aize-student-project-Motor.parquet"
+            subset_intervals = [[0,2], [2,4], [4,7], [7,10], [10,12]]
+            
+        print('fetching data...')
+        df = spark.read.parquet("data/"+filename)
+
+        if mode == constants.MOTOR:
+            df = df.withColumn("label", when(df.label == "Motor RPM","rpm").otherwise(df.label))
+        
+        return create_subsets_pyspark(df, subset_intervals, mode, save)
+            
+
+run(constants.MOTOR)
 #run(constants.PUMP_PROCESS)
