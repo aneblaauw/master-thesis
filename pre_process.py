@@ -36,11 +36,12 @@ def create_subsets(df, subset_intervals, folder_name):
 def create_subsets_pyspark(df, subset_intervals, folder_name, save = False):
     print('creating subsets...')
     labels = [row['label'] for row in  sorted(df.select('label').distinct().collect())]
-    subsets = []
+    subsets = {}
     filenames = []
     for interval in subset_intervals: 
-        subsets.append(df.filter(df.label.isin(labels[interval[0]:interval[1]])))
-        filenames.append(utils.create_file_name(labels[interval[0]]))
+        key = utils.create_file_name(labels[interval[0]])
+        subsets[key] = df.filter(df.label.isin(labels[interval[0]:interval[1]]))
+        filenames.append(key)
 
     if save:
         folder_path = f'data/{folder_name}/'
