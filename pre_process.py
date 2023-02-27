@@ -123,6 +123,13 @@ def run(mode = constants.MOTOR, engine = 'SPARK', save = False ):
         if mode == constants.MOTOR:
             filename = "Aize-student-project-Motor.parquet"
             subset_intervals = [[0,2], [2,4], [4,7], [7,10], [10,12]]
+        elif mode == constants.PUMP_PROCESS:
+            filename = "Aize-student-project-Motor.parquet"
+            subset_intervals = [[0,2], [2,4], [4,7], [7,10], [10,12]]
+        elif mode == constants.PUMP_MONITORING:
+            filename = "Aize-student-project-Motor.parquet"
+            subset_intervals = [[0,2], [2,4], [4,7], [7,10], [10,12]]
+        elif mode ==
             
         print('fetching data...')
         df = spark.read.parquet("data/"+filename)
@@ -133,5 +140,5 @@ def run(mode = constants.MOTOR, engine = 'SPARK', save = False ):
         return create_subsets_pyspark(df, subset_intervals, mode, save)
             
 
-run(constants.MOTOR)
+#run(constants.MOTOR)
 #run(constants.PUMP_PROCESS)
