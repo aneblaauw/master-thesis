@@ -165,8 +165,8 @@ def run(mode = constants.MOTOR, engine = 'SPARK', save = False ):
             
 
 #run(constants.MOTOR)
-df = run(constants.PUMP_MONITORING)
+#df = run(constants.PUMP_MONITORING)
 
-for key,value in df.items():
-    print(filter_and_resample(value))
+'''for key,value in df.items():
+    print(filter_and_resample(value))'''
 
