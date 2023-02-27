@@ -2,5 +2,6 @@ CATEGORIES = ['Pump Process', 'Motor', 'Water injection flow rates', 'Supply to 
 MOTOR = 'motor'
 PUMP_PROCESS = 'pump_process'
 PUMP_MONITORING = 'pump_monitoring'
-WORD_LIST = ['A', 'X', 'plane', '"U"', '"V"', '"W"', '(PST)']
+WORD_LIST = ['A', 'X', 'plane', '"U"', '"V"', '"W"', '(PST)', '(PT)', '(TST)', '(TT)']
 CHAR_LIST = ['?']
+TIMESPAN = ['2017-03-01', '2017-09-01']
