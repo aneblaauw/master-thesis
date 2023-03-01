@@ -1,6 +1,9 @@
+import pandas as pd
 import datetime
 import re
 import constants
+import plotly.express as px
+import plotly.graph_objects as go
 
 def translate_timestamp_to_datetime(timestamp):
     return datetime.datetime.fromtimestamp(int(timestamp) / 1e3)
@@ -29,3 +32,13 @@ def split_string(string):
     if len(res) == 13:
         res[6:8] = [' '.join(res[6:8])]
     return res
+
+def plot_with_not(df, notification_df):
+
+    fig = go.Figure()
+    for col in df.columns: 
+        fig.add_trace(go.Scatter(x=df.index, y=df[col], mode='lines', name=col))
+
+    for start_time in notification_df['startTime']:
+        fig.add_vrect(x0=start_time -  pd.Timedelta(days=3), x1=start_time + pd.Timedelta(days=3), line_width=0, fillcolor="red", opacity=0.2)
+    fig.show()

@@ -72,8 +72,8 @@ def create_units_and_sampling_df():
 
 
 
-def create_notifications_df(filename = "IAA_29PA0002_and_children_notifications_m2.xlsx"):
-    df = pd.read_excel("data/"+filename)
+def create_notifications_df(filename = "IAA_29PA0002_and_children_notifications_m2.xlsx", local_path = ''):
+    df = pd.read_excel(local_path+"data/"+filename)
     
     new_columns = df.columns[0].split(',')[1:]# first will be index
     new_columns.remove('metadata')
@@ -112,7 +112,7 @@ def filter_and_resample(df, start_date = '2017-03-01', end_date = '2017-09-01'):
     #new_df['DE Bearing Temp B'] = b['data']
     return new_df
 
-def run(mode = constants.MOTOR, engine = 'SPARK', save = False ):
+def run(mode = constants.MOTOR, engine = 'SPARK', save = False , local_path = ''):
     if engine == 'PANDAS':
         if mode == constants.MOTOR:
             filename = "Motor.parquet"
@@ -153,7 +153,7 @@ def run(mode = constants.MOTOR, engine = 'SPARK', save = False ):
             
             
         print('fetching data...')
-        df = spark.read.parquet("data/"+filename)
+        df = spark.read.parquet(local_path+"data/"+filename)
 
         if mode == constants.MOTOR:
             df = df.withColumn("label", when(df.label == "Motor RPM","rpm").otherwise(df.label))
