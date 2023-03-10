@@ -4,4 +4,4 @@ PUMP_PROCESS = 'pump_process'
 PUMP_MONITORING = 'pump_monitoring'
 WORD_LIST = ['A', 'X', 'plane', '"U"', '"V"', '"W"', '(PST)', '(PT)', '(TST)', '(TT)']
 CHAR_LIST = ['?']
-TIMESPAN = ['2017-03-01', '2017-09-01']
+TIMESPAN = ['2018-04-01', '2020-01-01']

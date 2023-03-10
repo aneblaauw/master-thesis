@@ -92,25 +92,24 @@ def create_notifications_df(filename = "IAA_29PA0002_and_children_notifications_
         notifications_df[column] = notifications_df[column].apply(lambda timestamp: utils.translate_timestamp_to_datetime(timestamp))
     return notifications_df
 
-def filter_and_resample(df, start_date = '2017-03-01', end_date = '2017-09-01'): 
+def filter_and_resample(df, start_date = constants.TIMESPAN[0], end_date = constants.TIMESPAN[1]): 
     # todo: find all unique labels in df and split up based on these
     filtered_dates = df.filter((df["timestamp"] >= lit(start_date)) & (df["timestamp"] <= lit(end_date)))
     labels = [row['label'] for row in  sorted(df.select('label').distinct().collect())]
   
     for idx, label in enumerate(labels):
-        tmp = filtered_dates.filter(filtered_dates['label'] == label).toPandas().set_index('timestamp').resample('60min').mean().interpolate()
+        tmp = filtered_dates.filter(filtered_dates['label'] == label).toPandas().set_index('timestamp')
+        tmp['sample_rate'] = 1
+        tmp = tmp.resample('60min').agg({'data':"mean", 'sample_rate':"sum"})
+        print(f'Number of NaN values for {label}:{tmp["data"].isna().sum()}')
+        tmp = tmp.interpolate()
         if idx == 0:
+            sample_rate = pd.DataFrame(index=tmp.index)
             new_df = pd.DataFrame(index=tmp.index)
         new_df[label] = tmp['data']
+        sample_rate[label] = tmp['sample_rate']
         
-
-    #a = filtered_dates.filter(filtered_dates['label'] == 'DE Bearing Temp A').toPandas().set_index('timestamp').resample('60min').mean().interpolate()
-    #b = filtered_dates.filter(filtered_dates['label'] == 'DE Bearing Temp B').toPandas().set_index('timestamp').resample('60min').mean().interpolate()
-
-    #new_df = pd.DataFrame(index=a.index)
-    #new_df['DE Bearing Temp A'] = a['data']
-    #new_df['DE Bearing Temp B'] = b['data']
-    return new_df
+    return new_df, sample_rate
 
 def run(mode = constants.MOTOR, engine = 'SPARK', save = False , local_path = ''):
     if engine == 'PANDAS':

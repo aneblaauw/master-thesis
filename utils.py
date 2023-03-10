@@ -4,6 +4,7 @@ import re
 import constants
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 def translate_timestamp_to_datetime(timestamp):
     return datetime.datetime.fromtimestamp(int(timestamp) / 1e3)
@@ -41,4 +42,34 @@ def plot_with_not(df, notification_df):
 
     for start_time in notification_df['startTime']:
         fig.add_vrect(x0=start_time -  pd.Timedelta(days=3), x1=start_time + pd.Timedelta(days=3), line_width=0, fillcolor="red", opacity=0.2)
+    fig.show()
+
+def plot_sampling_rate(data, sample_rate, value_counts):
+    # two series
+
+    # Create figure with secondary y-axis
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    fig.add_trace(
+        go.Scatter(x=data.index, y=data, name=data.name),
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(x=sample_rate.index, y=sample_rate, name="sampling rate"),
+        secondary_y=True,
+    )
+
+    # Set x-axis title
+    fig.update_xaxes(title_text="Timestamp")
+
+    # Set y-axes titles
+    fig.update_yaxes(title_text="rpm", secondary_y=False)
+    fig.update_yaxes(title_text="count", secondary_y=True)
+
+    fig.show()
+
+    fig = px.histogram(value_counts, x = value_counts['index'], y=value_counts['rpm'],
+                    marginal="box", # or violin, rug
+                    )
     fig.show()
