@@ -5,6 +5,7 @@ import os
 import constants
 import utils
 from functools import reduce
+import numpy as np
 
 
 from pyspark.sql import SparkSession
@@ -167,6 +168,7 @@ def run(mode = constants.MOTOR, engine = 'SPARK', save = False , local_path = ''
 
         if mode == constants.MOTOR:
             df = df.withColumn("label", when(df.label == "Motor RPM","rpm").otherwise(df.label))
+            df = df.withColumn("label", when(df.label == "NDE Vibration X plane ","NDE Vibration X plane").otherwise(df.label))
         
         if mode == constants.PUMP_MONITORING:
             df = df.withColumn("label", when(df.label == "Outet shaft vibration Y plane","Outlet shaft vibration Y plane").otherwise(df.label))
