@@ -4,6 +4,9 @@ import plotly.express as px
 import os
 import constants
 import utils
+from functools import reduce
+import numpy as np
+
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import when, lit
@@ -111,6 +114,14 @@ def filter_and_resample(df, start_date = constants.TIMESPAN[0], end_date = const
         
     return new_df, sample_rate
 
+def clean_motor_off(df_sensor_list):
+    df_merged = reduce(lambda  left,right: pd.merge(left,right,on=['timestamp'], how='outer'), df_sensor_list)
+
+    for col in df_merged.columns:
+        df_merged[col] = df_merged.apply(lambda row: np.NaN if row['rpm'] == 0 else row[col], axis=1).interpolate() # method='polynomial', order=2
+        
+    return df_merged
+
 def run(mode = constants.MOTOR, engine = 'SPARK', save = False , local_path = ''):
     if engine == 'PANDAS':
         if mode == constants.MOTOR:
@@ -156,6 +167,7 @@ def run(mode = constants.MOTOR, engine = 'SPARK', save = False , local_path = ''
 
         if mode == constants.MOTOR:
             df = df.withColumn("label", when(df.label == "Motor RPM","rpm").otherwise(df.label))
+            df = df.withColumn("label", when(df.label == "NDE Vibration X plane ","NDE Vibration X plane").otherwise(df.label))
         
         if mode == constants.PUMP_MONITORING:
             df = df.withColumn("label", when(df.label == "Outet shaft vibration Y plane","Outlet shaft vibration Y plane").otherwise(df.label))
