@@ -115,12 +115,34 @@ def filter_and_resample(df, start_date = constants.TIMESPAN[0], end_date = const
     return new_df, sample_rate
 
 def clean_motor_off(df_sensor_list):
+    '''_summary_
+
+    _extended_summary_
+
+    Args:
+        df_sensor_list (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    '''
     df_merged = reduce(lambda  left,right: pd.merge(left,right,on=['timestamp'], how='outer'), df_sensor_list)
 
     for col in df_merged.columns:
         df_merged[col] = df_merged.apply(lambda row: np.NaN if row['rpm'] == 0 else row[col], axis=1).interpolate() # method='polynomial', order=2
         
     return df_merged
+
+def clean_data(fasit, tbc, threshold = 5):
+    '''
+    Cleans tbc series based on when datapoints in fasit gets lower than a certain threshold
+    Args:
+        fasit (pd.Series): Series that defines if the datapoints should be cleaned
+        tbc (pd.Series): The series to be cleaned
+        threshold (int): Threshold
+
+        returns cleaned series
+    '''
+    return fasit.to_frame().join(tbc).apply(lambda row: np.NaN if row.iloc[0] <= threshold else row.iloc[1] , axis = 1).interpolate()
 
 def run(mode = constants.MOTOR, engine = 'SPARK', save = False , local_path = ''):
     if engine == 'PANDAS':
@@ -151,7 +173,7 @@ def run(mode = constants.MOTOR, engine = 'SPARK', save = False , local_path = ''
 
         if mode == constants.MOTOR:
             filename = "Aize-student-project-Motor.parquet"
-            subset_intervals = [[0,2], [2,4], [4,7], [7,10], [10,12]]
+            subset_intervals = [[0,2], [2,4], [4,6], [6,9], [9,11]]
         
         if mode == constants.PUMP_PROCESS:
             filename = "Aize-student-project-Pump Process.parquet"
@@ -175,7 +197,17 @@ def run(mode = constants.MOTOR, engine = 'SPARK', save = False , local_path = ''
         return create_subsets_pyspark(df, subset_intervals, mode, save)
             
 
-#run(constants.MOTOR)
+'''motor_subsets = run(constants.MOTOR)
+rpm, _ = filter_and_resample(motor_subsets['rpm'], start_date='2018-01-01', end_date='2018-03-01')
+rpm_series = rpm.iloc[:,0]
+nde_bearing_temp, _ = filter_and_resample(motor_subsets['nde_bearing_temp'],start_date='2018-01-01', end_date='2018-03-01')
+nde_bearing_temp_a_series = nde_bearing_temp.iloc[:,0]'''
+
+'''nde_bearing_temp_a_series = pd.read_csv('data/test_nde_bearing_temp_A', index_col='timestamp').iloc[:,0]
+rpm_series= pd.read_csv('data/test_rpm', index_col='timestamp')['rpm']
+print(rpm_series)
+print(nde_bearing_temp_a_series)
+clean_data(rpm_series, nde_bearing_temp_a_series)'''
 #df = run(constants.PUMP_MONITORING)
 
 '''for key,value in df.items():
